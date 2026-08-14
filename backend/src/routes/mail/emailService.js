@@ -1,6 +1,7 @@
-// emailService.js
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -16,7 +17,12 @@ const transporter = nodemailer.createTransport({
  * @param {string} username - Recipient name
  * @param {string} userType - Recipient userType
  */
-async function sendWelcomeEmail(toEmail, username, userType) {
+export async function sendWelcomeEmail(toEmail, username, userType) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`[EMAIL MOCK] Skipping email send (EMAIL_USER/EMAIL_PASS not configured) to ${toEmail}`);
+    return;
+  }
+
   try {
     const info = await transporter.sendMail({
       from: `"Chanix" <${process.env.EMAIL_USER}>`,
@@ -36,8 +42,8 @@ async function sendWelcomeEmail(toEmail, username, userType) {
 
     console.log("✅ Email sent:", info.messageId);
   } catch (error) {
-    console.error("❌ Error sending email:", error);
+    console.error("❌ Error sending email:", error.message);
   }
 }
 
-module.exports = { sendWelcomeEmail };
+export default sendWelcomeEmail;

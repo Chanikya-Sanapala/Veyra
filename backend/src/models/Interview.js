@@ -41,6 +41,4 @@ const interviewSchema = new mongoose.Schema({
   link: { type: String }
 }, { timestamps: true });
 
-interviewSchema.index({ uniqueToken: 1 });
-
 export default mongoose.models.Interview || mongoose.model('Interview', interviewSchema);

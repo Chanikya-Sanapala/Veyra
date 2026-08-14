@@ -43,7 +43,8 @@ function ResumeMatcher() {
     formData.append("fuzzy", fuzzy);
 
     try {
-      const response = await axios.post("http://localhost:8000/api/match", formData, {
+      const aiBaseUrl = (process.env.NEXT_PUBLIC_AI_SERVICE_URL || "http://localhost:8000").trim().replace(/\/$/, "");
+      const response = await axios.post(`${aiBaseUrl}/api/match`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

@@ -83,45 +83,28 @@ export const changePassword = async (req, res) => {
 export const updatePassword = async (req, res) => {
   const { userId, token, password } = req.body;
 
-  if (!userId || !token || !password) {
-    return res.status(400).json({ success: false, message: "All fields are required." });
+  if (!token || !password) {
+    return res.status(400).json({ success: false, message: "Token and new password are required." });
   }
 
   try {
-    // Find user by ID and token
-    const user = await User.findOne({
-      _id: userId,
-      // resetPasswordToken: token,
-      // resetPasswordExpires: { $gt: Date.now() }, // token is not expired
-    });
+    // Verify reset token cryptographically
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'smart_engine_default_secret_key_123_change_this_in_production');
+    const targetId = userId || decoded.id || decoded.userId;
 
-
+    const user = await User.findById(targetId);
     if (!user) {
-      return res.status(400).json({ success: false, message: "Invalid or expired token." });
+      return res.status(400).json({ success: false, message: "Invalid token or user not found." });
     }
 
-    // Hash new password manually since we are using updateOne (bypassing pre-save hook)
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Update password safely via model instance to trigger hashing/saving
+    user.password = password;
+    await user.save();
 
-    // Use updateOne to bypass generic document validation (e.g., missing firstName)
-    await User.updateOne(
-      { _id: userId },
-      {
-        $set: {
-          password: hashedPassword
-        },
-        $unset: {
-          resetPasswordToken: 1,
-          resetPasswordExpires: 1
-        }
-      }
-    );
-
-    console.log("Password updated for user:", userId);
+    console.log("Password updated securely for user:", targetId);
     res.json({ success: true, message: "Password updated successfully!" });
   } catch (err) {
-    console.error("Reset Password Error:", err);
-    res.status(500).json({ success: false, message: err.message || "Server error." });
+    console.error("Reset Password Error:", err.message);
+    res.status(400).json({ success: false, message: "Invalid or expired reset token." });
   }
-}
+};

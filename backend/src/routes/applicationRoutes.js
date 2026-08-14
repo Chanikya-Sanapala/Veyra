@@ -212,7 +212,11 @@ router.post('/', async (req, res) => {
         args.push(userEmail);
       }
 
-      const python = spawn('python', args);
+      const venvPythonWin = path.join(process.cwd(), '..', 'ai', '.venv', 'Scripts', 'python.exe');
+      const venvPythonUnix = path.join(process.cwd(), '..', 'ai', '.venv', 'bin', 'python');
+      const pythonExe = process.env.PYTHON_PATH || (fs.existsSync(venvPythonWin) ? venvPythonWin : (fs.existsSync(venvPythonUnix) ? venvPythonUnix : 'python'));
+
+      const python = spawn(pythonExe, args);
 
       let output = "";
       let errorOutput = "";

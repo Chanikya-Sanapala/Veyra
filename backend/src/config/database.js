@@ -5,11 +5,7 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: process.env.DB_NAME,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     
@@ -28,8 +24,8 @@ const connectDB = async () => {
     });
 
   } catch (error) {
-    console.error('Database connection failed:', error.message);
-    process.exit(1);
+    console.error('⚠️ Database connection failed:', error.message);
+    console.warn('⚠️ Server will run with database error state (routes returning 503 until DB connection is available).');
   }
 };
 

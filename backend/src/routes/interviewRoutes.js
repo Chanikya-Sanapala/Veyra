@@ -30,7 +30,8 @@ const upload = multer({ storage });
 router.get('/my-interviews', authenticateToken, async (req, res) => {
   try {
     const { default: Interview } = await import('../models/Interview.js');
-    const interviews = await Interview.find({ candidateId: req.user.userId })
+    const userId = req.user._id || req.user.id || req.user.userId;
+    const interviews = await Interview.find({ candidateId: userId })
       .populate('jobId', 'title company')
       .sort({ createdAt: -1 });
     res.json({ success: true, data: interviews });
@@ -41,17 +42,11 @@ router.get('/my-interviews', authenticateToken, async (req, res) => {
 
 router.get('/recruiter', authenticateToken, async (req, res) => {
   try {
-    // Find jobs posted by this recruiter
-    // We need to import Job model or assume interview controller handles it.
-    // Let's implement logic here or in controller. implementing here for speed as controller file not open.
-    // Need to dynamically import models or relying on controller is better.
-    // Actually, let's stick to modifying the controller? No, I can't see controller file easily without opening it.
-    // I'll implement inline here using mongoose models if I can import them.
-    // Importing Job and Interview models.
     const { default: Job } = await import('../models/Job.js');
     const { default: Interview } = await import('../models/Interview.js');
 
-    const jobs = await Job.find({ recruiterId: req.user.userId }).select('_id');
+    const recruiterId = req.user._id || req.user.id || req.user.userId;
+    const jobs = await Job.find({ recruiterId: String(recruiterId) }).select('_id');
     const jobIds = jobs.map(j => j._id);
 
     const interviews = await Interview.find({ jobId: { $in: jobIds } })

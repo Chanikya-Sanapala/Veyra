@@ -41,8 +41,7 @@ router.post('/register',
   authLimiter,
   validateRegistration,
   checkValidation,
-  register,
-  sendWelcomeEmail
+  register
 );
 
 router.post('/google', googleLogin);

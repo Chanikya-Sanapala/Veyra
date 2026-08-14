@@ -1,0 +1,5 @@
+technical : What experience do you have with Python and core tools related to this role?
+technical : Describe the architecture of a complex project you recently built or maintained.
+scenario : How do you handle performance bottlenecks or unexpected bugs in production?
+hr : What motivated you to apply for this position?
+hr : How do you collaborate with cross-functional teams under tight deadlines?

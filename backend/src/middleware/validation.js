@@ -23,7 +23,9 @@ export const validateRegistration = [
     .normalizeEmail()
     .withMessage('Please provide a valid email address')
     .custom(async (email) => {
-      const existingUser = await User.findByEmail(email);
+      const emailStr = String(email || '').toLowerCase().trim();
+      if (!emailStr) return true;
+      const existingUser = await User.findOne({ email: emailStr });
       if (existingUser) {
         throw new Error('Email already exists. Please use a different email.');
       }

@@ -1,5 +1,8 @@
 .env
+.env.*
+!.env.example
 __pycache__/
 .venv/
+transcripts/
 static/tts/
-static/recording/
+static/recordings/
