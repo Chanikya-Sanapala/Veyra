@@ -8,8 +8,12 @@ const cleanEnvStr = (str) => (str || '').replace(/\s+/g, '').replace(/^["']|["']
 const createTransporter = (user, pass) => {
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: {
       user: user,
       pass: pass,
@@ -33,7 +37,14 @@ export async function sendWelcomeEmail(toEmail, username, userType) {
   }
 
   try {
-    const info = await createTransporter(emailUser, emailPass).sendMail({
+    const maskedRecipient = toEmail.replace(/(?<=^..).*?(?=@)/, '***');
+    console.log(`[EMAIL DEBUG] Configured user: YES, Configured pass: YES, Recipient: ${maskedRecipient}`);
+
+    const transporter = createTransporter(emailUser, emailPass);
+    await transporter.verify();
+    console.log(`[EMAIL DEBUG] SMTP Connection verify: PASS`);
+
+    const info = await transporter.sendMail({
       from: `"Chanix AI" <${emailUser}>`,
       to: toEmail,
       subject: "Welcome to AI Smart Engine 🎉",
@@ -49,9 +60,9 @@ export async function sendWelcomeEmail(toEmail, username, userType) {
       `,
     });
 
-    console.log("✅ Welcome email sent to", toEmail, "Message ID:", info.messageId);
+    console.log(`[EMAIL DEBUG] sendMail result: PASS, MessageID: ${info.messageId}, Response: ${info.response}`);
   } catch (error) {
-    console.error("❌ Error sending welcome email to", toEmail, ":", error.message);
+    console.error(`[EMAIL DEBUG] sendMail result: FAIL | Code: ${error.code || 'NONE'} | Command: ${error.command || 'NONE'} | ResponseCode: ${error.responseCode || 'NONE'} | Message: ${error.message}`);
   }
 }
 
