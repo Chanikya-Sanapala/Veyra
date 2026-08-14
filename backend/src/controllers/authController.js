@@ -25,7 +25,7 @@ export const register = async (req, res) => {
     });
 
     await user.save();
-    await sendWelcomeEmail(email, username, userType);
+    sendWelcomeEmail(email, username, userType).catch(err => console.error('Async welcome email error:', err.message));
 
     // Don't create profile during registration to avoid validation errors
     // Profile will be created when user first updates their profile
@@ -337,7 +337,7 @@ export const googleLogin = async (req, res) => {
       });
 
       await user.save();
-      await sendWelcomeEmail(email, user.username, type);
+      sendWelcomeEmail(email, user.username, type).catch(err => console.error('Async welcome email error:', err.message));
 
       const authToken = generateToken(user._id);
 

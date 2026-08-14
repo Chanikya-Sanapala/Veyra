@@ -3,13 +3,19 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+let transporter;
+const getTransporter = () => {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+  }
+  return transporter;
+};
 
 /**
  * Sends a welcome/registration email
@@ -18,14 +24,17 @@ const transporter = nodemailer.createTransport({
  * @param {string} userType - Recipient userType
  */
 export async function sendWelcomeEmail(toEmail, username, userType) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (!emailUser || !emailPass) {
     console.log(`[EMAIL MOCK] Skipping email send (EMAIL_USER/EMAIL_PASS not configured) to ${toEmail}`);
     return;
   }
 
   try {
-    const info = await transporter.sendMail({
-      from: `"Chanix" <${process.env.EMAIL_USER}>`,
+    const info = await getTransporter().sendMail({
+      from: `"Chanix" <${emailUser}>`,
       to: toEmail,
       subject: "Welcome to AI Smart Engine 🎉",
       html: `
