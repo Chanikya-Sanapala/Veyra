@@ -191,65 +191,30 @@ router.post('/', async (req, res) => {
       }
       fs.writeFileSync(tempJdPath, jobDoc.description || jobDoc.title || 'No description');
 
+      const aiServiceUrl = (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
       const formData = new FormData();
       formData.append('resume', fs.createReadStream(resumeAbsPath));
       formData.append('jd', fs.createReadStream(tempJdPath));
-      formData.append('topk', 35);
-      formData.append('fuzzy', 85);
+      formData.append('topk', '35');
+      formData.append('fuzzy', '85');
 
-      const { spawn } = await import('child_process');
-      const scriptPath = path.join(process.cwd(), '..', 'ai', 'resume_matchmaker2.py');
+      console.log(`[AI MATCHMAKER] Requesting AI Match HTTP API at ${aiServiceUrl}/api/match`);
 
-      const args = [
-        scriptPath,
-        tempJdPath,
-        resumeAbsPath
-      ];
-
-      // Pass user email if authentic
-      if (userEmail) {
-        args.push('--email');
-        args.push(userEmail);
-      }
-
-      const venvPythonWin = path.join(process.cwd(), '..', 'ai', '.venv', 'Scripts', 'python.exe');
-      const venvPythonUnix = path.join(process.cwd(), '..', 'ai', '.venv', 'bin', 'python');
-      const pythonExe = process.env.PYTHON_PATH || (fs.existsSync(venvPythonWin) ? venvPythonWin : (fs.existsSync(venvPythonUnix) ? venvPythonUnix : 'python'));
-
-      const python = spawn(pythonExe, args);
-
-      let output = "";
-      let errorOutput = "";
-
-      await new Promise((resolve, reject) => {
-        python.stdout.on("data", (data) => { output += data.toString(); });
-        python.stderr.on("data", (data) => { errorOutput += data.toString(); });
-
-        python.on("close", (code) => {
-          if (code === 0) {
-            resolve();
-          } else {
-            reject(new Error(errorOutput || "Python script failed"));
-          }
-        });
+      const matchRes = await axios.post(`${aiServiceUrl}/api/match`, formData, {
+        headers: formData.getHeaders(),
+        timeout: 60000
       });
 
       // Cleanup temp JD file
-      fs.unlinkSync(tempJdPath);
+      if (fs.existsSync(tempJdPath)) {
+        fs.unlinkSync(tempJdPath);
+      }
 
-      // Parse CLI Output
-      // Example output: "📊 Match Score: 85.0% ..."
-      console.log("Python Output:", output);
-      console.log("Python Error Output:", errorOutput);
+      const matchData = matchRes.data || {};
+      let score = typeof matchData.score === 'number' ? matchData.score : parseFloat(matchData.score || 60);
+      if (isNaN(score) || score <= 0) score = 60;
 
-      const scoreMatch = output.match(/Match Score:\s*([\d\.]+)%/);
-      // Fallback to 60 if parse fails OR if score is 0 (likely extraction failure)
-      let score = scoreMatch ? parseFloat(scoreMatch[1]) : 60;
-      if (score === 0) score = 60;
-
-      const missingMatch = output.match(/Missing \(from JD focus set\):\s*\n\s*(.*?)(?=\n\n|\n💡|\n=|$)/s);
-      const missingText = missingMatch ? missingMatch[1].trim() : "";
-      const suggestions = (missingText && missingText !== "—") ? missingText.split(',').map(s => s.trim()) : [];
+      const suggestions = Array.isArray(matchData.missing) ? matchData.missing : [];
 
       // Logic: Score < 75 => Rejected but SAVED
       // Logic: Score >= 75 => Applied

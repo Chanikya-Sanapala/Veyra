@@ -267,17 +267,9 @@ export const checkEmail = async (req, res) => {
   }
 };
 
-// Lazy initialize client to ensure env vars are loaded and trimmed
-let googleOAuthClient;
-const getGoogleClient = () => {
-  if (!googleOAuthClient) {
-    const clientId = (process.env.GOOGLE_CLIENT_ID || "").trim();
-    if (!clientId) {
-      console.error("❌ CRITICAL: GOOGLE_CLIENT_ID is missing in environment variables!");
-    }
-    googleOAuthClient = new OAuth2Client(clientId);
-  }
-  return googleOAuthClient;
+const getGoogleClientId = () => {
+  const raw = process.env.GOOGLE_CLIENT_ID || "";
+  return raw.replace(/^["']|["']$/g, '').trim();
 };
 
 export const googleLogin = async (req, res) => {
@@ -288,8 +280,13 @@ export const googleLogin = async (req, res) => {
       return sendError(res, 'Google token is required', null, 400);
     }
 
-    const googleClient = getGoogleClient();
-    const audience = (process.env.GOOGLE_CLIENT_ID || "").trim();
+    const audience = getGoogleClientId();
+    if (!audience) {
+      console.error("❌ CRITICAL: GOOGLE_CLIENT_ID environment variable is missing on backend!");
+      return sendError(res, 'Google OAuth server configuration error: GOOGLE_CLIENT_ID not set', null, 500);
+    }
+
+    const googleClient = new OAuth2Client(audience);
 
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
