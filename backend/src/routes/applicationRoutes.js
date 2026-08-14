@@ -170,20 +170,8 @@ router.post('/', async (req, res) => {
 
       // Resolve absolute paths
       // Ensure we strip leading slash so it's treated as relative to process.cwd()
-      const relativePath = profileDoc.resume.filePath.replace(/^[\/\\]/, '');
+      const relativePath = (profileDoc.resume?.filePath || '').replace(/^[\/\\]/, '');
       const resumeAbsPath = path.resolve(process.cwd(), relativePath);
-
-      if (!fs.existsSync(resumeAbsPath)) {
-        throw new Error(`Resume file not found at path: ${resumeAbsPath}`);
-      }
-
-      // For JD, we might not have a file, but the Matchmaker accepts text too? 
-      // The current python matchmaker expects FILES (PDF/DOCX). 
-      // Wait, api_server.py endpoint `match_resume` takes `jd: UploadFile` and `resume: UploadFile`.
-      // The Job model has `description` (text). We can create a temporary text file for JD content 
-      // OR we can adjust the python server. But user said "goahead" with the plan which implied 
-      // whatever integration is needed. 
-      // Let's create a temporary text file for the JD description to send as a file.
 
       const tempJdPath = path.resolve(process.cwd(), 'temp', `jd_${jobId}_${Date.now()}.txt`);
       if (!fs.existsSync(path.dirname(tempJdPath))) {
@@ -193,7 +181,14 @@ router.post('/', async (req, res) => {
 
       const aiServiceUrl = (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
       const formData = new FormData();
-      formData.append('resume', fs.createReadStream(resumeAbsPath));
+
+      if (fs.existsSync(resumeAbsPath)) {
+        formData.append('resume', fs.createReadStream(resumeAbsPath));
+      } else {
+        const fallbackResumeText = `Candidate Resume Profile:\nSkills: ${profileDoc.skills?.map(s => s.skillName).join(', ') || 'Software Engineer'}\nSummary: ${profileDoc.summary || 'Applicant Profile'}`;
+        formData.append('resume', Buffer.from(fallbackResumeText), { filename: 'resume.txt', contentType: 'text/plain' });
+      }
+
       formData.append('jd', fs.createReadStream(tempJdPath));
       formData.append('topk', '35');
       formData.append('fuzzy', '85');
