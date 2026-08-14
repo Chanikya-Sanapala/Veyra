@@ -337,7 +337,7 @@ export const googleLogin = async (req, res) => {
       });
 
       await user.save();
-      // await sendWelcomeEmail(email, user.username, type); // Optional: send email
+      await sendWelcomeEmail(email, user.username, type);
 
       const authToken = generateToken(user._id);
 
