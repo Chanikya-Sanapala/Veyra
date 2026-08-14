@@ -5,20 +5,16 @@ dotenv.config();
 
 const cleanEnvStr = (str) => (str || '').replace(/\s+/g, '').replace(/^["']|["']$/g, '');
 
-let transporter;
-const getTransporter = (user, pass) => {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: user,
-        pass: pass,
-      },
-    });
-  }
-  return transporter;
+const createTransporter = (user, pass) => {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: user,
+      pass: pass,
+    },
+  });
 };
 
 /**
@@ -37,7 +33,7 @@ export async function sendWelcomeEmail(toEmail, username, userType) {
   }
 
   try {
-    const info = await getTransporter(emailUser, emailPass).sendMail({
+    const info = await createTransporter(emailUser, emailPass).sendMail({
       from: `"Chanix AI" <${emailUser}>`,
       to: toEmail,
       subject: "Welcome to AI Smart Engine 🎉",
