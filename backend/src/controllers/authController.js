@@ -25,7 +25,11 @@ export const register = async (req, res) => {
     });
 
     await user.save();
-    sendWelcomeEmail(email, username, userType).catch(err => console.error('Async welcome email error:', err.message));
+    try {
+      await sendWelcomeEmail(email, username, userType);
+    } catch (emailErr) {
+      console.error('Welcome email dispatch warning:', emailErr.message);
+    }
 
     // Don't create profile during registration to avoid validation errors
     // Profile will be created when user first updates their profile
@@ -337,7 +341,11 @@ export const googleLogin = async (req, res) => {
       });
 
       await user.save();
-      sendWelcomeEmail(email, user.username, type).catch(err => console.error('Async welcome email error:', err.message));
+      try {
+        await sendWelcomeEmail(email, user.username, type);
+      } catch (emailErr) {
+        console.error('Google OAuth welcome email dispatch warning:', emailErr.message);
+      }
 
       const authToken = generateToken(user._id);
 
