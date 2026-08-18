@@ -4,6 +4,7 @@ import Application from '../models/Application.js';
 import Job from '../models/Job.js';
 import JobSeekerProfile from '../models/JobSeekerProfile.js';
 import User from '../models/User.js';
+import sendEmail from '../utils/sendEmail.js';
 
 const router = express.Router();
 
@@ -144,17 +145,37 @@ router.post('/', async (req, res) => {
       return sendError(res, 'This job has expired and is no longer accepting applications.', null, 400);
     }
 
-    const profileDoc = await JobSeekerProfile.findOne({ userId: applicantId }).lean();
+    // Resolve User document robustly
+    let userDoc = null;
+    let resolvedApplicantId = applicantId;
+    
+    if (applicantId) {
+      if (typeof applicantId === 'string' && applicantId.includes('@')) {
+        userDoc = await User.findOne({ email: applicantId.toLowerCase() }).lean();
+      } else {
+        userDoc = await User.findById(applicantId).lean().catch(() => null);
+        if (!userDoc) {
+          userDoc = await User.findOne({ $or: [{ email: applicantId }, { _id: applicantId }] }).lean().catch(() => null);
+        }
+      }
+    }
+    
+    if (userDoc) {
+      resolvedApplicantId = userDoc._id;
+    }
+
+    const userEmail = userDoc ? userDoc.email : (typeof applicantId === 'string' && applicantId.includes('@') ? applicantId : '');
+
+    const profileDoc = await JobSeekerProfile.findOne({
+      $or: [{ userId: resolvedApplicantId }, { userId: applicantId }]
+    }).lean();
+
     if (!profileDoc || !profileDoc.resume || !profileDoc.resume.filePath) {
       return sendError(res, 'No resume found on your profile. Please upload a resume first.', null, 400);
     }
 
-    // Fetch User to get email
-    const userDoc = await User.findById(applicantId).lean();
-    const userEmail = userDoc ? userDoc.email : '';
-
     // Check if already applied
-    const existingApp = await Application.findOne({ job: jobId, applicant: applicantId });
+    const existingApp = await Application.findOne({ job: jobId, applicant: resolvedApplicantId });
     if (existingApp) {
       return sendError(res, 'You have already applied for this job.', null, 409);
     }
@@ -226,12 +247,8 @@ router.post('/', async (req, res) => {
       // 6 hours = 21600000 ms
       // 12 hours = 43200000 ms
 
-      // DELAY LOGIC: 5 minutes using fixed value
-      // 1 minute = 60000 ms
-      // 5 minutes = 300000 ms
-
-      // const randomDelay = 5 * 60 * 1000; // 5 minutes fixed delay
-      const randomDelay = 10 * 1000; // 10 seconds for immediate testing
+      // DELAY LOGIC: 1.5 minutes (90 seconds) secret match delay
+      const randomDelay = 90 * 1000; // 90 seconds (1.5 minutes)
 
       const scheduledTime = new Date(Date.now() + randomDelay);
 
@@ -248,8 +265,48 @@ router.post('/', async (req, res) => {
         emailSent: false
       });
 
-      // REMOVED IMMEDIATE EMAIL SENDING LOGIC
-      // The scheduler will pick up this application after 'scheduledTime' passes.
+      // Send immediate Application Received confirmation email
+      if (userEmail) {
+        const candidateName = userDoc ? (`${userDoc.firstName || ''} ${userDoc.lastName || ''}`).trim() || userDoc.username || 'Candidate' : 'Candidate';
+        const companyName = jobDoc.company || 'VEYRA Hiring Partner';
+        const jobTitle = jobDoc.title || 'Position';
+        const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+        sendEmail({
+          email: userEmail,
+          subject: `Application Received — ${jobTitle} at ${companyName}`,
+          message: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #F5F7FA; border-radius: 16px;">
+              <div style="background-color: #FFFFFF; padding: 32px; border-radius: 16px; border: 1px solid #EAECF0;">
+                <div style="margin-bottom: 24px;">
+                  <span style="font-size: 22px; font-weight: 800; color: #2161FF; letter-spacing: -0.5px;">VEYRA</span>
+                </div>
+                <h2 style="color: #101828; font-size: 20px; font-weight: 700; margin-bottom: 16px;">Application Received!</h2>
+                <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                  Hi <strong>${candidateName}</strong>,
+                </p>
+                <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                  Thank you for applying for the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong> through VEYRA.
+                </p>
+                <div style="background-color: #F8FAFC; padding: 16px; border-radius: 12px; border-left: 4px solid #2161FF; margin-bottom: 20px;">
+                  <p style="color: #101828; font-size: 13px; font-weight: 700; margin: 0;">Status: Profile Under Review</p>
+                  <p style="color: #64748B; font-size: 12px; margin-top: 4px; margin-bottom: 0;">Our AI matching engine and hiring team are actively reviewing your application and profile details.</p>
+                </div>
+                <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                  You can track your application status in real-time from your VEYRA Candidate Workspace.
+                </p>
+                <a href="${frontendUrl}/jobseeker-dashboard" style="display: inline-block; background-color: #2161FF; color: #FFFFFF; font-weight: 700; font-size: 13px; text-decoration: none; padding: 12px 24px; border-radius: 10px;">
+                  Open Candidate Dashboard →
+                </a>
+                <hr style="border: none; border-top: 1px solid #EAECF0; margin: 32px 0 20px 0;" />
+                <p style="color: #98A2B3; font-size: 12px; margin: 0;">
+                  VEYRA — AI-Powered Talent Intelligence Platform
+                </p>
+              </div>
+            </div>
+          `
+        }).catch(err => console.error('[EMAIL] Application confirmation error:', err));
+      }
 
       if (isLowScore) {
         return res.status(200).json({
@@ -299,7 +356,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PATCH /api/applications/:id - update application status (placeholder)
 // PATCH /api/applications/:id - update application status
 router.patch('/:id', async (req, res) => {
   try {
@@ -312,10 +368,85 @@ router.patch('/:id', async (req, res) => {
       id,
       { status },
       { new: true }
-    );
+    ).populate('job').populate('applicant');
 
     if (!application) {
       return sendError(res, 'Application not found', null, 404);
+    }
+
+    // Send email notification to candidate on status update
+    try {
+      let candidateEmail = '';
+      let candidateName = 'Candidate';
+      if (application.applicant) {
+        if (typeof application.applicant === 'object') {
+          candidateEmail = application.applicant.email || '';
+          candidateName = application.applicant.firstName || application.applicant.username || 'Candidate';
+        }
+      }
+
+      const jobTitle = application.job?.title || 'the applied position';
+      const companyName = application.job?.company || 'VEYRA Recruitment';
+
+      if (candidateEmail && status === 'Shortlisted') {
+        sendEmail({
+          email: candidateEmail,
+          subject: `Congratulations! You've been shortlisted for ${jobTitle} at ${companyName} 🎯`,
+          message: `
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #101828; max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #eaecf0;">
+              <div style="text-align: center; padding-bottom: 16px; border-bottom: 1px solid #f2f4f7;">
+                <h1 style="color: #2161FF; margin: 0; font-size: 24px; font-weight: 800;">VEYRA AI</h1>
+                <p style="color: #667085; font-size: 12px; margin-top: 4px;">Talent Acquisition Intelligence</p>
+              </div>
+
+              <div style="padding: 20px 0;">
+                <h2 style="color: #101828; font-size: 18px; font-weight: 700; margin-bottom: 12px;">Congratulations, ${candidateName}! 🎉</h2>
+                <p style="font-size: 14px; line-height: 1.6; color: #344054;">
+                  Great news! The recruiting team at <b>${companyName}</b> has reviewed your application and <b>shortlisted</b> your profile for the <b>${jobTitle}</b> position.
+                </p>
+
+                <div style="margin: 20px 0; padding: 18px; background-color: #f8fafc; border-radius: 14px; border-left: 4px solid #2161FF;">
+                  <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: #101828;">📌 Next Round: Technical & Role Fit Assessment</h3>
+                  <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.5;">
+                    As part of the shortlisted selection pool, your application is advancing to the <b>Next Assessment Round</b>.
+                  </p>
+                  <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #475569; line-height: 1.6;">
+                    <li><b>What to Expect:</b> Technical skills evaluation & role readiness assessment.</li>
+                    <li><b>Preparation:</b> Ensure a quiet environment and stable internet connection.</li>
+                    <li><b>Schedule Notice:</b> An official interview invitation link will be sent to your email shortly by the recruiter.</li>
+                  </ul>
+                </div>
+
+                <p style="font-size: 13px; line-height: 1.6; color: #667085;">
+                  You can track your live application status anytime on your VEYRA Candidate Dashboard.
+                </p>
+              </div>
+
+              <div style="text-align: center; padding-top: 16px; border-top: 1px solid #f2f4f7; color: #98a2b3; font-size: 12px;">
+                <p style="margin: 0;">© ${new Date().getFullYear()} ${companyName} via VEYRA AI Platform</p>
+              </div>
+            </div>
+          `
+        }).catch(err => console.error('Shortlist email error:', err));
+      } else if (candidateEmail && status === 'Rejected') {
+        sendEmail({
+          email: candidateEmail,
+          subject: `Application Update: ${jobTitle} at ${companyName}`,
+          message: `
+            <div style="font-family: Arial, sans-serif; padding: 24px; color: #101828; max-width: 560px; margin: 0 auto; border: 1px solid #eaecf0; border-radius: 16px;">
+              <h2 style="color: #101828; margin-top: 0;">Application Status Update</h2>
+              <p>Hi <b>${candidateName}</b>,</p>
+              <p>Thank you for your interest in the <b>${jobTitle}</b> position at <b>${companyName}</b> and for taking the time to apply.</p>
+              <p>After careful review, we have decided to move forward with other candidates whose qualifications closely match our current requirements.</p>
+              <p>We appreciate your effort and wish you the best in your job search.</p>
+              <br/>
+              <p>Best regards,<br/><b>VEYRA Recruitment Team</b></p>
+            </div>
+          `
+        }).catch(err => console.error('Rejection email error:', err));
+      }
+    } catch (emailErr) {
+      console.error('Status update notification warning:', emailErr.message);
     }
 
     return sendSuccess(res, 'Application updated successfully', application, 200);

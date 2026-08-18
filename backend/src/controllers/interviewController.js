@@ -82,16 +82,56 @@ export const createInterviewInternal = async (candidateId, jobId) => {
 
 export const scheduleInterview = async (req, res) => {
     try {
-        const { candidateId, jobId } = req.body;
+        const { candidateId, jobId, interviewType = 'AI Interview', scheduledDate, scheduledTime } = req.body;
         if (!candidateId || !jobId) return sendError(res, 'Missing IDs', null, 400);
 
         const { link, interview, token, expiresAt } = await createInterviewInternal(candidateId, jobId);
-        console.log(`[EMAIL MOCK] Sending interview link: ${link}`);
 
-        sendSuccess(res, 'Interview scheduled', { interviewId: interview._id, token, link });
+        // Fetch Job and Candidate details for Email
+        try {
+            const sendEmailModule = await import('../utils/sendEmail.js');
+            const jobDoc = await Job.findById(jobId).lean();
+            const userDoc = await User.findById(candidateId).lean();
+
+            if (userDoc && userDoc.email) {
+                const candidateName = userDoc.firstName || userDoc.username || 'Candidate';
+                const jobTitle = jobDoc?.title || 'the position';
+                const companyName = jobDoc?.company || 'VEYRA Recruitment';
+                const dateStr = scheduledDate ? `${scheduledDate} at ${scheduledTime || 'Scheduled Time'}` : 'As soon as possible';
+
+                await sendEmailModule.default({
+                    email: userDoc.email,
+                    subject: `Interview Invitation: ${jobTitle} at ${companyName}`,
+                    message: `
+                        <div style="font-family: Arial, sans-serif; padding: 24px; color: #101828; max-width: 560px; margin: 0 auto; border: 1px solid #eaecf0; border-radius: 16px;">
+                            <h2 style="color: #2161FF; margin-top: 0;">You're Invited to an Interview! 🎯</h2>
+                            <p>Hi <b>${candidateName}</b>,</p>
+                            <p>Congratulations! You have been invited to a <b>${interviewType}</b> for the position of <b>${jobTitle}</b> at <b>${companyName}</b>.</p>
+                            <div style="background-color: #f8fafc; padding: 16px; border-radius: 12px; margin: 20px 0; border-left: 4px solid #2161FF;">
+                                <p style="margin: 0; font-size: 14px; font-weight: 700; color: #101828;">Interview Details:</p>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569;">Type: <b>${interviewType}</b></p>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569;">Schedule: <b>${dateStr}</b></p>
+                            </div>
+                            <div style="text-align: center; margin: 28px 0;">
+                                <a href="${link}" style="display: inline-block; padding: 12px 28px; background-color: #2161FF; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 10px; font-size: 14px;">
+                                    Start Interview →
+                                </a>
+                            </div>
+                            <p style="font-size: 12px; color: #667085;">Note: Please complete the interview before the token expires.</p>
+                            <br/>
+                            <p style="font-size: 13px; color: #344054;">Best regards,<br/><b>VEYRA Recruitment Team</b></p>
+                        </div>
+                    `
+                });
+            }
+        } catch (emailErr) {
+            console.error('Interview invite email error:', emailErr.message);
+        }
+
+        sendSuccess(res, 'Interview scheduled successfully', { interviewId: interview._id, token, link });
     } catch (error) {
         console.error('Schedule error:', error);
-        sendError(res, 'Failed to schedule', null, 500);
+        sendError(res, 'Failed to schedule interview', null, 500);
     }
 };
 

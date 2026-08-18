@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Application from '../models/Application.js';
 import Job from '../models/Job.js';
 import User from '../models/User.js';
@@ -5,6 +6,11 @@ import sendEmail from './sendEmail.js';
 import { createInterviewInternal } from '../controllers/interviewController.js';
 
 const checkAndSendEmails = async () => {
+    // Only query if DB is connected (readyState === 1)
+    if (mongoose.connection.readyState !== 1) {
+        return;
+    }
+
     try {
         const now = new Date();
         // Find applications where scheduled time has passed and email hasn't been sent
@@ -13,7 +19,7 @@ const checkAndSendEmails = async () => {
             emailSent: false
         }).populate('job'); // We need job details
 
-        if (pendingApps.length === 0) return;
+        if (!pendingApps || pendingApps.length === 0) return;
 
         console.log(`[SCHEDULER] Found ${pendingApps.length} pending emails.`);
 
@@ -32,63 +38,83 @@ const checkAndSendEmails = async () => {
                 }
 
                 const score = app.matchScore || 0;
-                // Logic: Score < 75 => Rejected (already set in DB mostly, but we re-check logic if needed)
-                // Actually status is already set in DB during creation. We just notify based on status/score.
 
                 if (score < 65) {
                     // Rejection Email
                     await sendEmail({
                         email: applicant.email,
-                        subject: 'Application Update: ' + job.title,
+                        subject: `Application Evaluation & AI Resume Match Score — ${job.title}`,
                         message: `
-                        <div style="font-family: Arial, sans-serif; padding: 20px;">
-                            <h2>Application Status Update</h2>
-                            <p>Dear Candidate,</p>
-                            <p>Thank you for your interest in the <b>${job.title}</b> position at <b>${job.company}</b>.</p>
-                            <p>After reviewing your resume against our requirements, we regret to inform you that we will not be proceeding with your application at this time as your profile does not meet our minimum matching criteria (Score: ${score}%).</p>
-                            <p>We encourage you to apply for other openings that match your skills.</p>
-                            <br>
-                            <p>Best Regards,</p>
-                            <p><b>Smart Engine Team</b></p>
-                        </div>
-                    `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #F5F7FA; border-radius: 16px;">
+                                <div style="background-color: #FFFFFF; padding: 32px; border-radius: 16px; border: 1px solid #EAECF0;">
+                                    <div style="margin-bottom: 24px;">
+                                        <span style="font-size: 22px; font-weight: 800; color: #2161FF; letter-spacing: -0.5px;">VEYRA</span>
+                                    </div>
+                                    <h2 style="color: #101828; font-size: 20px; font-weight: 700; margin-bottom: 16px;">Resume AI Evaluation Complete</h2>
+                                    <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                                        Dear <strong>${applicant.firstName || 'Candidate'}</strong>,
+                                    </p>
+                                    <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                                        Our AI matching engine has completed evaluating your resume for the <strong>${job.title}</strong> position at <strong>${job.company}</strong>.
+                                    </p>
+                                    <div style="background-color: #FEF3F2; padding: 20px; border-radius: 12px; border: 1px solid #FECDCA; margin-bottom: 20px; text-center;">
+                                        <span style="font-size: 12px; font-weight: 700; color: #B42318; text-transform: uppercase;">Your Resume AI Match Score</span>
+                                        <div style="font-size: 32px; font-weight: 900; color: #B42318; margin: 6px 0;">${score}%</div>
+                                        <p style="color: #B42318; font-size: 13px; margin: 0;">Status: Profile Not Selected at this time</p>
+                                    </div>
+                                    <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                                        While your profile did not reach the threshold for this specific position, we encourage you to apply for other roles on VEYRA.
+                                    </p>
+                                    <hr style="border: none; border-top: 1px solid #EAECF0; margin: 32px 0 20px 0;" />
+                                    <p style="color: #98A2B3; font-size: 12px; margin: 0;">
+                                        VEYRA — AI-Powered Talent Intelligence Platform
+                                    </p>
+                                </div>
+                            </div>
+                            `
                     });
-                    console.log(`[SCHEDULER] Sent rejection email to ${applicant.email} for job ${job.title}`);
+                    console.log(`[SCHEDULER] Sent rejection email to ${applicant.email} for job ${job.title} (Score: ${score}%)`);
 
                 } else {
-                    // Acceptance / Interview Email
-                    // We need to generate the interview link now if it wasn't generated before? 
-                    // Or we utilize the existing interview controller logic.
-                    // Since we are delaying feedback, we should probably schedule the interview OR send the link now.
-                    // Let's create the interview NOW.
-
-                    // Note: If we want to be safe, we check if interview exists. 
-                    // But createInterviewInternal usually handles creation.
-
                     try {
-                        // We can't easily check for existing interview without importing model, relying on controller to handle "get or create" or just create.
-                        const { link, user } = await createInterviewInternal(app.applicant, job._id);
+                        const { link } = await createInterviewInternal(app.applicant, job._id);
 
                         await sendEmail({
                             email: applicant.email,
-                            subject: 'Congratulations! You are Shortlisted for an AI Interview',
+                            subject: `🎉 Congratulations! Shortlisted for AI Interview — ${job.title}`,
                             message: `
-                    <div style="font-family: Arial, sans-serif; padding: 20px;">
-                        <h1 style="color: #2e7d32;">Congratulations!</h1>
-                        <p>We are pleased to inform you that you have been <b>shortlisted</b> for the <b>${job.title}</b> position.</p>
-                        <p>Based on your resume match score (${score}%), we would like to invite you to an AI-based interview round.</p>
-                        <p>Please complete your AI Interview within 24 hours using the link below:</p>
-                        <br>
-                        <a href="${link}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Start Interview Now</a>
-                        <br><br>
-                        <p>Or copy this link: ${link}</p>
-                        <br>
-                        <p>Good luck!</p>
-                        <p><b>Smart Engine Team</b></p>
-                    </div>
-                `
+                                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #F5F7FA; border-radius: 16px;">
+                                    <div style="background-color: #FFFFFF; padding: 32px; border-radius: 16px; border: 1px solid #EAECF0;">
+                                        <div style="margin-bottom: 24px;">
+                                            <span style="font-size: 22px; font-weight: 800; color: #2161FF; letter-spacing: -0.5px;">VEYRA</span>
+                                        </div>
+                                        <h2 style="color: #101828; font-size: 20px; font-weight: 700; margin-bottom: 16px;">Congratulations! You Are Shortlisted</h2>
+                                        <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                                            Hi <strong>${applicant.firstName || 'Candidate'}</strong>,
+                                        </p>
+                                        <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                                            Great news! Our AI matching engine evaluated your resume for <strong>${job.title}</strong> at <strong>${job.company}</strong>.
+                                        </p>
+                                        <div style="background-color: #ECFDF5; padding: 20px; border-radius: 12px; border: 1px solid #A7F3D0; margin-bottom: 20px; text-center;">
+                                            <span style="font-size: 12px; font-weight: 700; color: #047857; text-transform: uppercase;">Your Resume AI Match Score</span>
+                                            <div style="font-size: 32px; font-weight: 900; color: #047857; margin: 6px 0;">${score}%</div>
+                                            <p style="color: #047857; font-size: 13px; margin: 0; font-weight: 700;">Status: Shortlisted for AI Interview Round</p>
+                                        </div>
+                                        <p style="color: #475467; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                                            Please click below to start your AI technical interview:
+                                        </p>
+                                        <a href="${link}" style="display: inline-block; background-color: #2161FF; color: #FFFFFF; font-weight: 700; font-size: 14px; text-decoration: none; padding: 14px 28px; border-radius: 12px;">
+                                            Start AI Interview Now →
+                                        </a>
+                                        <hr style="border: none; border-top: 1px solid #EAECF0; margin: 32px 0 20px 0;" />
+                                        <p style="color: #98A2B3; font-size: 12px; margin: 0;">
+                                            VEYRA — AI-Powered Talent Intelligence Platform
+                                        </p>
+                                    </div>
+                                </div>
+                                `
                         });
-                        console.log(`[SCHEDULER] Sent interview email to ${applicant.email} for job ${job.title}`);
+                        console.log(`[SCHEDULER] Sent interview email with match score (${score}%) to ${applicant.email} for job ${job.title}`);
                     } catch (err) {
                         console.error(`[SCHEDULER] Failed to schedule interview/email for ${applicant.email}:`, err);
                     }
@@ -104,16 +130,16 @@ const checkAndSendEmails = async () => {
         }
 
     } catch (error) {
-        console.error('[SCHEDULER] Error in check loop:', error);
+        console.error('[SCHEDULER] Error in check loop:', error.message);
     }
 };
 
 export const startScheduler = () => {
-    console.log('⏰ Scheduler started. Checking for pending emails every 60 seconds.');
+    console.log('⏰ Scheduler started. Checking for pending emails every 15 seconds.');
     // Check immediately on startup
     checkAndSendEmails();
-    // Check every 60 seconds
-    setInterval(checkAndSendEmails, 60 * 1000);
+    // Check every 15 seconds
+    setInterval(checkAndSendEmails, 15 * 1000);
 };
 
 export default startScheduler;

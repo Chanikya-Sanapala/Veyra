@@ -3,19 +3,17 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { GoogleLogin } from '@react-oauth/google';
-import { FaGithub } from "react-icons/fa";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [userType, setUserType] = useState('Job Seeker'); // Default to Job Seeker
+  const [userType, setUserType] = useState("Job Seeker");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Debug: Log state changes
   useEffect(() => {
-    console.log('🔄 Form state updated:', formData, userType);
+    console.log("🔄 Form state updated:", formData, userType);
   }, [formData, userType]);
 
   const handleLogin = async (e) => {
@@ -23,257 +21,341 @@ export default function LoginPage() {
     setMessage("");
     setIsLoading(true);
 
-    // Validation
     if (!formData.email || !formData.password) {
-      setMessage("❌ Please fill in all required fields");
+      setMessage("Please fill in all required fields.");
       setIsLoading(false);
       return;
     }
 
-    console.log('🔐 Attempting login with:', {
-      email: formData.email,
-      userType: userType,
-      passwordLength: formData.password.length
-    });
-
     try {
-      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000").trim().replace(/\/$/, "");
+      const baseUrl = (
+        process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
+      )
+        .trim()
+        .replace(/\/$/, "");
+
       const res = await fetch(`${baseUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ ...formData, userType }),
       });
-      const data = await res.json();
-      console.log('📨 Login response:', { status: res.status, data });
 
+      const data = await res.json();
       const payload = data?.data || {};
       const token = payload.token;
       const user = payload.user;
 
       if (res.ok && data.success && token && user) {
-        setMessage('✅ ' + data.message);
-        console.log('🎉 Login successful, redirecting...');
+        setMessage(data.message || "Sign in successful. Redirecting...");
 
-        // Store token in localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
 
         setTimeout(() => {
-          // Prefer backend userType, but fall back to the selected form userType
-          const type = (user?.userType || userType || '').toLowerCase();
-          let path = '/jobseeker-dashboard';
-          if (type === 'recruiter') path = '/recruiter-dashboard';
-          else if (type === 'admin' || type === 'administrator') path = '/admin-dashboard';
+          const type = (user?.userType || userType || "").toLowerCase();
+          let path = "/jobseeker-dashboard";
+          if (type === "recruiter") path = "/recruiter-dashboard";
+          else if (type === "admin" || type === "administrator")
+            path = "/admin-dashboard";
 
           try {
-            const encoded = btoa(JSON.stringify({ user, token, userType: user.userType }));
+            const encoded = btoa(
+              JSON.stringify({ user, token, userType: user.userType })
+            );
             window.location.href = `${path}?u=${encodeURIComponent(encoded)}`;
           } catch (_) {
             window.location.href = path;
           }
-        }, 1200);
+        }, 800);
       } else {
-        console.log('❌ Login failed:', data);
-        setMessage('❌ ' + (data?.message || 'Login failed'));
+        setMessage(data?.message || "Invalid email or password. Please try again.");
       }
     } catch (error) {
-      console.error('❌ Login error:', error);
-      setMessage('❌ Network error: Could not connect to server. Make sure backend is running on port 5000.');
+      console.error("❌ Login error:", error);
+      setMessage(
+        "Could not connect to authentication server. Please check status."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen w-full bg-[#D97706] text-white overflow-x-hidden">
+    <div className="h-screen w-screen overflow-hidden flex flex-col justify-between items-center bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased px-4 py-3 selection:bg-[#0071E3] selection:text-white">
+      {/* Top Apple Header (Fixed height) */}
+      <header className="w-full max-w-5xl flex items-center justify-between py-1 px-2">
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="w-7 h-7 rounded-lg bg-[#0071E3] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+          </div>
+          <span className="text-base font-semibold tracking-tight text-[#1D1D1F]">
+            VEYRA
+          </span>
+        </Link>
 
-      {/* Branding - Top on mobile, Left on desktop (Swapped) */}
-      <div
-        className="w-full md:w-1/2 order-1 flex flex-col justify-center items-center p-8 md:p-12 relative min-h-[300px] md:min-h-screen bg-gradient-to-br from-[#D97706] to-[#78350f] border-b md:border-b-0 md:border-r border-white/20"
-      >
-        <div className="text-center max-w-md relative z-10">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 leading-tight tracking-tighter uppercase">
-            Welcome <span className="text-white/40">Back</span>
-          </h1>
-          <p className="text-base md:text-lg text-white/80 mb-4 font-medium italic">
-            "Your next big opportunity is just a login away."
-          </p>
+        <div className="text-xs text-[#86868B]">
+          <span>Need help? </span>
+          <a href="#support" className="text-[#0071E3] hover:underline font-medium">
+            Support
+          </a>
         </div>
-        {/* Subtle decorative glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-[100px] pointer-events-none"></div>
-      </div>
+      </header>
 
-      {/* Form Side */}
-      <div className="w-full md:w-1/2 order-2 flex flex-col justify-center items-center px-6 py-12 md:p-12 lg:p-20 shrink-0 bg-white">
-        <div className="w-full max-w-md space-y-8">
+      {/* APPLE ID CENTERED CARD (Fits exact screen height without scrolling) */}
+      <main className="my-auto w-full max-w-[400px]">
+        <div className="bg-white/95 backdrop-blur-2xl rounded-[24px] p-6 sm:p-7 shadow-[0_12px_40px_rgba(0,0,0,0.06)] border border-black/[0.05]">
+          {/* Card Header & Icon */}
+          <div className="text-center space-y-2 mb-5">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0071E3] to-[#2161FF] text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+              <svg
+                className="w-6 h-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 17 12 22 22 17" />
+                <polyline points="2 12 12 17 22 12" />
+              </svg>
+            </div>
 
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-black text-[#78350f] tracking-tight mb-2 uppercase">Log In</h2>
-            <p className="text-[#D97706]/60 font-bold text-sm tracking-widest uppercase">
-              Access your {userType} portal
-            </p>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#1D1D1F]">
+                Sign in with VEYRA
+              </h1>
+              <p className="text-xs text-[#86868B] mt-0.5">
+                Use your VEYRA ID to access talent intelligence
+              </p>
+            </div>
           </div>
 
-          {/* User Type Toggle */}
-          <div className="flex bg-[#D97706]/5 border-2 border-[#D97706]/10 p-1.5 rounded-2xl mb-8 relative">
-            <div
-              className="absolute top-1.5 bottom-1.5 bg-[#D97706] rounded-xl transition-all duration-300 ease-in-out shadow-lg"
-              style={{
-                left: userType === 'Job Seeker' ? '6px' : '50%',
-                width: 'calc(50% - 6px)'
-              }}
-            />
+          {/* Apple Segmented Control Switcher */}
+          <div className="bg-[#E8E8ED]/70 p-1 rounded-full border border-black/[0.04] mb-4 flex relative">
             <button
-              onClick={() => setUserType('Job Seeker')}
-              className={`flex-1 py-3 text-xs font-black z-10 transition-all tracking-widest ${userType === 'Job Seeker' ? 'text-white' : 'text-[#D97706]/50 hover:text-[#D97706]'}`}
+              onClick={() => setUserType("Job Seeker")}
               type="button"
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
+                userType === "Job Seeker"
+                  ? "bg-white text-[#1D1D1F] shadow-[0_2px_6px_rgba(0,0,0,0.12)]"
+                  : "text-[#86868B] hover:text-[#1D1D1F]"
+              }`}
             >
-              JOB SEEKER
+              Candidate
             </button>
             <button
-              onClick={() => setUserType('Recruiter')}
-              className={`flex-1 py-3 text-xs font-black z-10 transition-all tracking-widest ${userType === 'Recruiter' ? 'text-white' : 'text-[#D97706]/50 hover:text-[#D97706]'}`}
+              onClick={() => setUserType("Recruiter")}
               type="button"
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
+                userType === "Recruiter"
+                  ? "bg-white text-[#1D1D1F] shadow-[0_2px_6px_rgba(0,0,0,0.12)]"
+                  : "text-[#86868B] hover:text-[#1D1D1F]"
+              }`}
             >
-              RECRUITER
+              Recruiter
             </button>
           </div>
 
-        </div>
-
-        {/* Social Login */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="flex justify-center w-full">
+          {/* Google OAuth Login */}
+          <div className="w-full flex justify-center mb-3.5">
             <GoogleLogin
               onSuccess={async (credentialResponse) => {
                 try {
                   setIsLoading(true);
                   const { credential } = credentialResponse;
-                  const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000").trim().replace(/\/$/, "");
+                  const baseUrl = (
+                    process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
+                  )
+                    .trim()
+                    .replace(/\/$/, "");
+
                   const res = await fetch(`${baseUrl}/api/auth/google`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                       token: credential,
-                      userType: userType
+                      userType,
                     }),
                   });
                   const data = await res.json();
 
                   if (res.ok && data.success) {
-                    setMessage('✅ ' + data.message);
+                    setMessage("Google authentication successful!");
                     if (data.data && data.data.token) {
-                      localStorage.setItem('token', data.data.token);
-                      localStorage.setItem('user', JSON.stringify(data.data.user));
+                      localStorage.setItem("token", data.data.token);
+                      localStorage.setItem("user", JSON.stringify(data.data.user));
                     }
 
                     setTimeout(() => {
-                      const type = (data.data.user.userType || userType).toLowerCase();
-                      let path = '/jobseeker-dashboard';
-                      if (type === 'recruiter') path = '/recruiter-dashboard';
-                      else if (type === 'admin') path = '/admin-dashboard';
+                      const type = (data.data?.user?.userType || userType).toLowerCase();
+                      let path = "/jobseeker-dashboard";
+                      if (type === "recruiter") path = "/recruiter-dashboard";
+                      else if (type === "admin") path = "/admin-dashboard";
                       window.location.href = path;
-                    }, 1500);
+                    }, 1000);
                   } else {
-                    setMessage('❌ ' + (data?.message || 'Google login failed'));
+                    setMessage(data?.message || "Google login failed.");
                     setIsLoading(false);
                   }
                 } catch (err) {
-                  console.error('Google login error', err);
-                  setMessage('❌ Google login failed');
+                  console.error("Google login error", err);
+                  setMessage("Google login failed.");
                   setIsLoading(false);
                 }
               }}
               onError={() => {
-                setMessage('❌ Google login failed');
+                setMessage("Google login cancelled.");
                 setIsLoading(false);
               }}
-              theme="filled_black"
+              theme="outline"
               shape="pill"
               width="100%"
             />
           </div>
-          <button
-            disabled={isLoading}
-            className="flex items-center justify-center gap-2 bg-gray-50 border-2 border-gray-100 rounded-full py-2.5 px-6 hover:bg-gray-100 text-gray-700 transition-all text-sm font-bold w-full"
-            type="button"
-          >
-            <FaGithub size={20} />
-            Github
-          </button>
-        </div>
 
-        <div className="flex items-center gap-4 py-2 mb-6">
-          <div className="h-px flex-1 bg-gray-200"></div>
-          <span className="text-gray-400 text-[10px] sm:text-xs uppercase font-bold tracking-widest">OR LOG IN WITH EMAIL</span>
-          <div className="h-px flex-1 bg-gray-200"></div>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block mb-2 text-xs font-black uppercase tracking-widest text-[#78350f]/40">Email Address</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 text-gray-900 outline-none focus:border-[#D97706]/30 focus:ring-4 focus:ring-[#D97706]/5 transition-all font-medium"
-              required
-            />
+          {/* Apple Divider */}
+          <div className="flex items-center gap-3 my-3">
+            <div className="h-px flex-1 bg-black/[0.08]" />
+            <span className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider">
+              or email
+            </span>
+            <div className="h-px flex-1 bg-black/[0.08]" />
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-xs font-black uppercase tracking-widest text-[#78350f]/40">Password</label>
-              <Link href="/ForgotPassword" size="sm" className="text-xs font-bold text-[#D97706] hover:underline underline-offset-4">RESET PASSWORD?</Link>
-            </div>
-            <div className="relative">
+          {/* Credentials Form */}
+          <form onSubmit={handleLogin} className="space-y-3">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-[11px] font-semibold text-[#1D1D1F] mb-1 pl-1"
+              >
+                Email Address
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 pr-12 text-gray-900 outline-none focus:border-[#D97706]/30 focus:ring-4 focus:ring-[#D97706]/5 transition-all font-medium"
+                id="email"
+                type="email"
+                placeholder="name@company.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="w-full bg-[#F5F5F7] hover:bg-[#EFEFF4] focus:bg-white border border-transparent focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/15 rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#1D1D1F] placeholder:text-[#86868B] outline-none transition-all"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#D97706] transition-colors p-1"
-              >
-                {showPassword ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
-              </button>
             </div>
-          </div>
 
-          {message && (
-            <div className={`p-4 rounded-2xl text-sm font-bold border animate-fade-in text-center ${message.includes('✅')
-              ? 'bg-green-50 text-green-600 border-green-100'
-              : 'bg-red-50 text-red-600 border-red-100'
-              }`}>
-              {message}
-            </div>
-          )}
-
-          <button
-            disabled={isLoading}
-            className={`w-full bg-[#D97706] text-white font-black p-4 rounded-2xl transition-all hover:bg-[#b45309] hover:scale-[0.98] active:scale-[0.95] shadow-xl shadow-[#D97706]/20 uppercase tracking-widest ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                <span>AUTHENTICATING...</span>
+            <div>
+              <div className="flex justify-between items-center mb-1 pl-1">
+                <label
+                  htmlFor="password"
+                  className="text-[11px] font-semibold text-[#1D1D1F]"
+                >
+                  Password
+                </label>
+                <Link
+                  href="/ForgotPassword"
+                  className="text-[11px] font-medium text-[#0071E3] hover:underline"
+                >
+                  Forgot?
+                </Link>
               </div>
-            ) : "Sign In"}
-          </button>
 
-          <p className="text-center text-gray-400 text-sm font-bold pt-4">
-            NEW HERE? <Link href="/Signup" className="text-[#D97706] hover:underline underline-offset-4 decoration-[#D97706]/30 uppercase">Create an account</Link>
-          </p>
-        </form>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className="w-full bg-[#F5F5F7] hover:bg-[#EFEFF4] focus:bg-white border border-transparent focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/15 rounded-xl px-3.5 py-2.5 pr-10 text-xs font-medium text-[#1D1D1F] placeholder:text-[#86868B] outline-none transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label="Toggle password visibility"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] transition-colors p-1"
+                >
+                  {showPassword ? (
+                    <AiOutlineEyeInvisible size={16} />
+                  ) : (
+                    <AiOutlineEye size={16} />
+                  )}
+                </button>
+              </div>
+            </div>
 
-      </div>
+            {/* Feedback Banner */}
+            {message && (
+              <div
+                className={`p-2.5 rounded-xl text-[11px] font-medium border text-center transition-all ${
+                  message.includes("successful") || message.includes("Redirecting")
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : "bg-red-50 text-red-700 border-red-200"
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
+            {/* Apple Primary Blue Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full bg-[#0071E3] hover:bg-[#0077ED] active:scale-[0.98] text-white font-medium text-xs py-3 px-5 rounded-xl shadow-[0_4px_12px_rgba(0,113,227,0.25)] transition-all duration-200 ${
+                isLoading ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
+
+          {/* Apple Redirect Footer */}
+          <div className="text-center pt-4 text-xs text-[#86868B]">
+            <span>Don't have a VEYRA ID? </span>
+            <Link
+              href="/Signup"
+              className="text-[#0071E3] font-semibold hover:underline"
+            >
+              Create one now →
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      {/* Apple Compact Footer */}
+      <footer className="w-full max-w-5xl py-2 px-2 text-center text-[11px] text-[#86868B] flex items-center justify-between border-t border-black/[0.05]">
+        <div>© 2026 VEYRA Inc.</div>
+        <div className="flex items-center gap-3">
+          <a href="#privacy" className="hover:underline">
+            Privacy
+          </a>
+          <span>·</span>
+          <a href="#terms" className="hover:underline">
+            Terms
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

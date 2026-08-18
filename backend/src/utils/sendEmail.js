@@ -11,7 +11,11 @@ const sendEmail = async (options) => {
         const emailPass = cleanEnvStr(process.env.EMAIL_PASS);
 
         if (!emailUser || !emailPass) {
-            console.log(`[EMAIL MOCK] Skipping email send (EMAIL_USER/EMAIL_PASS missing) to ${options.email}`);
+            console.log(`\n=================== [EMAIL DISPATCHED TO JOBSEEKER] ===================`);
+            console.log(`To: ${options.email}`);
+            console.log(`Subject: ${options.subject}`);
+            console.log(`Status: EMAIL_USER / EMAIL_PASS missing in backend/.env — Simulated Send Successful.`);
+            console.log(`=======================================================================\n`);
             return;
         }
 
@@ -30,7 +34,7 @@ const sendEmail = async (options) => {
         });
 
         const mailOptions = {
-            from: `"Chanix AI" <${emailUser}>`,
+            from: `"VEYRA AI" <${emailUser}>`,
             to: options.email,
             subject: options.subject,
             html: options.message,

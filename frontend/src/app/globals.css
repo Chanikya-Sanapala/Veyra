@@ -302,3 +302,112 @@ body {
   /* Darker on focus */
   outline: none;
 }
+
+/* VEYRA Custom Animations & Utilities */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes candidateSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes resultSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(24px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes aiPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(33, 97, 255, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 28px 8px rgba(33, 97, 255, 0.25);
+  }
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0.1;
+  }
+}
+
+@keyframes shortlistPop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-ai-pulse {
+  animation: aiPulse 3s ease-in-out infinite;
+}
+
+.animate-scan-line {
+  animation: scanLine 3s ease-in-out infinite;
+}
+
+.animate-shortlist-pop {
+  animation: shortlistPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+.bg-dot-grid {
+  background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+  background-size: 24px 24px;
+}
