@@ -9,6 +9,8 @@ import {
   FiSearch, FiFilter, FiCalendar, FiExternalLink, FiChevronDown, FiBell, FiTrash2,
   FiGlobe, FiSliders, FiAlertCircle, FiZap, FiTarget, FiArrowRight, FiDownload, FiEye, FiPaperclip
 } from 'react-icons/fi';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const baseAuthUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
@@ -179,7 +181,7 @@ export default function RecruiterDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(editingJob ? 'Job updated successfully!' : 'Job published successfully! 🎉');
+        toast.success(editingJob ? 'Job updated successfully!' : 'Job published successfully! 🎉');
         setShowJobForm(false);
         setEditingJob(null);
         setNewJob({
@@ -189,11 +191,11 @@ export default function RecruiterDashboard() {
         });
         fetchRecruiterData(user._id || user.id);
       } else {
-        alert(data.message || 'Failed to save job');
+        toast.error(data.message || 'Failed to save job');
       }
     } catch (err) {
       console.error('Job save error:', err);
-      alert('Error saving job');
+      toast.error('Error saving job');
     }
   };
 
@@ -205,14 +207,15 @@ export default function RecruiterDashboard() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        alert('Job deleted successfully');
+        toast.success('Job deleted successfully');
         setShowDeleteConfirm(null);
         fetchRecruiterData(user._id || user.id);
       } else {
-        alert('Failed to delete job');
+        toast.error('Failed to delete job');
       }
     } catch (err) {
       console.error('Delete job error:', err);
+      toast.error('Error deleting job');
     }
   };
 
@@ -226,16 +229,17 @@ export default function RecruiterDashboard() {
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
-        alert(`Application status updated to ${newStatus}`);
+        toast.success(`Application status updated to ${newStatus}`);
         if (selectedApplication && selectedApplication._id === appId) {
           setSelectedApplication({ ...selectedApplication, status: newStatus });
         }
         fetchRecruiterData(user._id || user.id);
       } else {
-        alert('Failed to update status');
+        toast.error('Failed to update status');
       }
     } catch (err) {
       console.error('Update app status error:', err);
+      toast.error('Error updating status');
     }
   };
 
@@ -262,16 +266,16 @@ export default function RecruiterDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Interview scheduled successfully! Candidate notified via email. 🎉');
+        toast.success('Interview scheduled successfully! Candidate notified via email. 🎉');
         await handleUpdateAppStatus(selectedApplication._id, 'Interview');
         setShowScheduleModal(false);
         setShowCandidateModal(false);
       } else {
-        alert(data.message || 'Failed to schedule interview');
+        toast.error(data.message || 'Failed to schedule interview');
       }
     } catch (err) {
       console.error('Schedule interview error:', err);
-      alert('Error scheduling interview');
+      toast.error('Error scheduling interview');
     }
   };
 
@@ -298,13 +302,14 @@ export default function RecruiterDashboard() {
         })
       });
       if (res.ok) {
-        alert('Company Profile saved successfully!');
+        toast.success('Company Profile saved successfully!');
         fetchRecruiterData(user._id || user.id);
       } else {
-        alert('Failed to update company profile');
+        toast.error('Failed to update company profile');
       }
     } catch (err) {
       console.error('Company profile update error:', err);
+      toast.error('Error updating company profile');
     }
   };
 
@@ -347,6 +352,7 @@ export default function RecruiterDashboard() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FB] text-[#101828] font-sans antialiased">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
       <Head>
         <title>VEYRA — Recruiter Hiring Workspace</title>
       </Head>
