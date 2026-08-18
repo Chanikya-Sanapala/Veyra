@@ -22,22 +22,24 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-const allowedOriginsEnv = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+const allowedOriginsEnv = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000')
   .split(',')
-  .map(o => o.trim())
+  .map(o => o.trim().replace(/\/$/, ''))
   .filter(Boolean);
 
-// Dynamic CORS: allow env origins + any Vercel preview deployments + localhost
+// Dynamic CORS: allow env origins + any Vercel preview deployments (chanix/veyra) + localhost
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    // Allow if explicitly listed
-    if (allowedOriginsEnv.includes(origin)) return callback(null, true);
-    // Allow any Vercel preview URL for this project
-    if (origin.match(/^https:\/\/chanix.*\.vercel\.app$/)) return callback(null, true);
+    // Standardize origin by removing trailing slash
+    const cleanOrigin = origin.replace(/\/$/, '');
+    // Allow if explicitly listed or matched in allowed origins
+    if (allowedOriginsEnv.includes(cleanOrigin) || allowedOriginsEnv.includes(origin)) return callback(null, true);
+    // Allow any Vercel preview/production URL for chanix or veyra projects
+    if (cleanOrigin.match(/^https:\/\/(chanix|veyra).*\.vercel\.app$/)) return callback(null, true);
     // Allow localhost in any form
-    if (origin.match(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/)) return callback(null, true);
+    if (cleanOrigin.match(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/)) return callback(null, true);
     console.warn(`[CORS] Blocked origin: ${origin}`);
     callback(new Error(`CORS: Origin ${origin} not allowed`));
   },

@@ -49,13 +49,15 @@ export const createInterviewInternal = async (candidateId, jobId) => {
         }
     } catch (e) { console.error("Error reading questions file:", e); }
 
+    const frontendBaseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+
     if (existingInterest) {
         // FORCE UPDATE
         existingInterest.questions = fileQuestions;
         await existingInterest.save();
 
         const token = existingInterest.uniqueToken;
-        const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/interview/${token}`;
+        const link = `${frontendBaseUrl}/interview/${token}`;
         return { link, user, interview: existingInterest, token };
     }
 
@@ -76,7 +78,7 @@ export const createInterviewInternal = async (candidateId, jobId) => {
 
     await interview.save();
 
-    const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/interview/${token}`;
+    const link = `${frontendBaseUrl}/interview/${token}`;
     return { link, user, interview, token };
 };
 
