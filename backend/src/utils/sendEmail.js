@@ -15,14 +15,6 @@ const sendEmail = async (options) => {
             return { simulated: true };
         }
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: emailUser,
-                pass: emailPass,
-            },
-        });
-
         const mailOptions = {
             from: `"VEYRA Recruitment" <${emailUser}>`,
             to: options.email,
@@ -30,11 +22,40 @@ const sendEmail = async (options) => {
             html: options.message,
         };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log("✅ Email sent successfully to %s: %s", options.email, info.messageId);
-        return info;
+        // Primary Transport: Gmail Service
+        try {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: emailUser,
+                    pass: emailPass,
+                },
+                tls: { rejectUnauthorized: false }
+            });
+            const info = await transporter.sendMail(mailOptions);
+            console.log("✅ Email sent successfully via Gmail Service to %s: %s", options.email, info.messageId);
+            return info;
+        } catch (serviceErr) {
+            console.warn("⚠️ Gmail service transport failed (%s). Retrying with Direct SSL Port 465...", serviceErr.message);
+            
+            // Secondary Fallback Transport: Direct SSL Port 465
+            const fallbackTransporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
+                auth: {
+                    user: emailUser,
+                    pass: emailPass,
+                },
+                tls: { rejectUnauthorized: false }
+            });
+            const info = await fallbackTransporter.sendMail(mailOptions);
+            console.log("✅ Email sent successfully via Direct SSL to %s: %s", options.email, info.messageId);
+            return info;
+        }
     } catch (error) {
         console.error("❌ Error sending email to %s:", options.email, error.message);
+        throw error;
     }
 };
 

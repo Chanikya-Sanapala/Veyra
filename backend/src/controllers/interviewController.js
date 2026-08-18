@@ -95,14 +95,27 @@ export const scheduleInterview = async (req, res) => {
             const jobDoc = await Job.findById(jobId).lean();
             
             let userDoc = null;
+            let targetEmail = null;
+            let candidateName = 'Candidate';
+
             if (candidateId) {
-                userDoc = await User.findById(candidateId).lean();
-                if (!userDoc) {
-                    userDoc = await User.findOne({ email: candidateId }).lean();
+                if (typeof candidateId === 'object' && candidateId._id) {
+                    userDoc = await User.findById(candidateId._id).lean();
+                    if (candidateId.email) targetEmail = candidateId.email;
+                } else if (typeof candidateId === 'string' && candidateId.includes('@')) {
+                    targetEmail = candidateId;
+                    userDoc = await User.findOne({ email: candidateId.toLowerCase() }).lean();
+                } else {
+                    userDoc = await User.findById(candidateId).lean();
                 }
             }
 
-            if (userDoc && userDoc.email) {
+            if (userDoc) {
+                targetEmail = targetEmail || userDoc.email;
+                candidateName = (userDoc.firstName ? `${userDoc.firstName} ${userDoc.lastName || ''}`.trim() : userDoc.username) || 'Candidate';
+            }
+
+            if (targetEmail) {
                 const candidateName = (userDoc.firstName ? `${userDoc.firstName} ${userDoc.lastName || ''}` : userDoc.username) || 'Candidate';
                 const jobTitle = jobDoc?.title || 'the position';
                 const companyName = jobDoc?.company || 'VEYRA Recruitment';
