@@ -93,13 +93,22 @@ export const scheduleInterview = async (req, res) => {
         try {
             const sendEmailModule = await import('../utils/sendEmail.js');
             const jobDoc = await Job.findById(jobId).lean();
-            const userDoc = await User.findById(candidateId).lean();
+            
+            let userDoc = null;
+            if (candidateId) {
+                userDoc = await User.findById(candidateId).lean();
+                if (!userDoc) {
+                    userDoc = await User.findOne({ email: candidateId }).lean();
+                }
+            }
 
             if (userDoc && userDoc.email) {
-                const candidateName = userDoc.firstName || userDoc.username || 'Candidate';
+                const candidateName = (userDoc.firstName ? `${userDoc.firstName} ${userDoc.lastName || ''}` : userDoc.username) || 'Candidate';
                 const jobTitle = jobDoc?.title || 'the position';
                 const companyName = jobDoc?.company || 'VEYRA Recruitment';
                 const dateStr = scheduledDate ? `${scheduledDate} at ${scheduledTime || 'Scheduled Time'}` : 'As soon as possible';
+
+                console.log(`[INTERVIEW EMAIL] Dispatching email invitation to ${userDoc.email} for ${jobTitle}`);
 
                 await sendEmailModule.default({
                     email: userDoc.email,
@@ -125,6 +134,8 @@ export const scheduleInterview = async (req, res) => {
                         </div>
                     `
                 });
+            } else {
+                console.warn(`[INTERVIEW EMAIL WARNING] Candidate user document or email not found for ID: ${candidateId}`);
             }
         } catch (emailErr) {
             console.error('Interview invite email error:', emailErr.message);

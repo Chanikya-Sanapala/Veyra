@@ -11,22 +11,12 @@ const sendEmail = async (options) => {
         const emailPass = cleanEnvStr(process.env.EMAIL_PASS);
 
         if (!emailUser || !emailPass) {
-            console.log(`\n=================== [EMAIL DISPATCHED TO JOBSEEKER] ===================`);
-            console.log(`To: ${options.email}`);
-            console.log(`Subject: ${options.subject}`);
-            console.log(`Status: EMAIL_USER / EMAIL_PASS missing in backend/.env — Simulated Send Successful.`);
-            console.log(`=======================================================================\n`);
-            return;
+            console.warn(`\n⚠️ [EMAIL WARNING] EMAIL_USER or EMAIL_PASS missing in backend environment variables. Real email dispatch skipped. Please configure EMAIL_USER and EMAIL_PASS on Render.\n`);
+            return { simulated: true };
         }
 
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
-            requireTLS: true,
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000,
+            service: 'gmail',
             auth: {
                 user: emailUser,
                 pass: emailPass,
@@ -34,7 +24,7 @@ const sendEmail = async (options) => {
         });
 
         const mailOptions = {
-            from: `"VEYRA AI" <${emailUser}>`,
+            from: `"VEYRA Recruitment" <${emailUser}>`,
             to: options.email,
             subject: options.subject,
             html: options.message,
