@@ -57,23 +57,24 @@ export const validateLogin = [
 
 export const validateJobSeekerProfile = [
   body('phone')
-    .optional()
-    .matches(/^[0-9]{10}$/)
-    .withMessage('Phone number must be 10 digits'),
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^[0-9+\-\s()]{7,20}$/)
+    .withMessage('Phone number must be valid (7-20 characters)'),
 
   body('summary')
-    .optional()
-    .isLength({ max: 1000 })
-    .withMessage('Summary cannot exceed 1000 characters'),
+    .optional({ checkFalsy: true })
+    .isLength({ max: 2000 })
+    .withMessage('Summary cannot exceed 2000 characters'),
 
   body('skills.*.skillName')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ min: 1 })
     .withMessage('Skill name is required'),
 
   body('skills.*.proficiencyLevel')
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(['beginner', 'intermediate', 'advanced', 'expert'])
     .withMessage('Invalid proficiency level')
 ];
