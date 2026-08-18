@@ -321,6 +321,10 @@ router.post('/', async (req, res) => {
       };
 
       return sendSuccess(res, 'Application submitted successfully. We will notify you after review.', data, 201);
+    } catch (prepErr) {
+      console.error('Application match error:', prepErr);
+      return sendError(res, 'Failed to process application match', prepErr.message, 500);
+    }
 
   } catch (error) {
     return sendError(res, 'Failed to create application', error.message || error, 500);

@@ -1,0 +1,11 @@
+{
+  "name": "veyra-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VEYRA - AI Recruitment & Talent Intelligence Platform Monorepo",
+  "scripts": {
+    "install": "cd backend && npm install",
+    "start": "cd backend && npm start",
+    "build": "cd backend && npm install"
+  }
+}
