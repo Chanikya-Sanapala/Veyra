@@ -354,8 +354,7 @@ export default function RecruiterDashboard() {
       {/* Top Mobile Navbar */}
       <header className="lg:hidden bg-white/80 backdrop-blur-xl border-b border-gray-200/80 px-4 py-3 sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-[#2161FF] text-white flex items-center justify-center font-extrabold text-sm">V</div>
-          <span className="font-black text-lg tracking-tight text-[#101828]">VEYRA</span>
+          <img src="/logo.png" alt="VEYRA" className="h-8 w-auto object-contain" />
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 text-gray-600 relative">
@@ -374,13 +373,7 @@ export default function RecruiterDashboard() {
         <aside className={`${isSidebarOpen ? 'flex' : 'hidden'} lg:flex w-64 flex-col justify-between p-6 sticky top-0 h-screen border-r border-gray-200/60 bg-white/70 backdrop-blur-2xl shrink-0 z-30`}>
           <div className="space-y-8">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('overview')}>
-              <div className="w-9 h-9 rounded-xl bg-[#2161FF] flex items-center justify-center text-white font-black text-lg shadow-md shadow-[#2161FF]/25">
-                V
-              </div>
-              <div>
-                <span className="font-black text-xl tracking-tight text-[#101828]">VEYRA</span>
-                <span className="block text-[10px] font-bold text-[#2161FF] uppercase tracking-widest">Recruiter AI</span>
-              </div>
+              <img src="/logo.png" alt="VEYRA" className="h-9 w-auto object-contain" />
             </div>
 
             <nav className="space-y-1">

@@ -146,25 +146,7 @@ export default function CinematicHero() {
         <div className="max-w-3xl">
           {/* Animated VEYRA Logo Emblem */}
           <div className="mb-4 sm:mb-6 inline-flex items-center gap-3 animate-[fadeSlideUp_0.8s_ease_0.1s_both]">
-            <div className="relative flex items-center justify-center">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#2161FF] to-indigo-500 opacity-70 blur-md animate-glow-pulse" />
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-black border border-white/30 text-white flex items-center justify-center font-black shadow-2xl">
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-ai-pulse"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                  <polyline points="2 17 12 22 22 17" />
-                  <polyline points="2 12 12 17 22 12" />
-                </svg>
-              </div>
-            </div>
-            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              VEYRA
-            </span>
+            <img src="/logo.png" alt="VEYRA" className="h-12 sm:h-14 w-auto object-contain drop-shadow-[0_0_20px_rgba(33,97,255,0.4)]" />
           </div>
 
           <p className="mb-3 sm:mb-4 text-xs sm:text-sm text-white/90 font-medium tracking-wide uppercase animate-[fadeSlideUp_0.8s_ease_0.3s_both]">

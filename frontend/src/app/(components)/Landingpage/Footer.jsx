@@ -11,14 +11,7 @@ export default function Footer() {
           {/* Brand Info Column */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#2161FF] text-white flex items-center justify-center font-black text-sm">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" strokeWidth="2.5" />
-                  <polyline points="2 17 12 22 22 17" strokeWidth="2.5" />
-                  <polyline points="2 12 12 17 22 12" strokeWidth="2.5" />
-                </svg>
-              </div>
-              <span className="text-xl font-bold tracking-tight text-white">VEYRA</span>
+              <img src="/logo.png" alt="VEYRA" className="h-8 w-auto object-contain bg-white/90 p-1 rounded-md" />
             </Link>
             <p className="text-sm text-gray-400 max-w-sm leading-relaxed">
               AI-powered talent intelligence that helps teams discover stronger candidates, understand fit, and make confident hiring decisions.

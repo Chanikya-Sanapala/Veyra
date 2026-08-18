@@ -91,22 +91,7 @@ export default function SignupPage() {
       {/* Top Apple Header */}
       <header className="w-full max-w-5xl flex items-center justify-between py-1 px-2">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-7 h-7 rounded-lg bg-[#0071E3] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
-            <svg
-              className="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
-          </div>
-          <span className="text-base font-semibold tracking-tight text-[#1D1D1F]">
-            VEYRA
-          </span>
+          <img src="/logo.png" alt="VEYRA" className="h-8 w-auto object-contain group-hover:scale-105 transition-transform" />
         </Link>
 
         <div className="text-xs text-[#86868B]">
@@ -122,19 +107,7 @@ export default function SignupPage() {
         <div className="bg-white/95 backdrop-blur-2xl rounded-[24px] p-5 sm:p-6 shadow-[0_12px_40px_rgba(0,0,0,0.06)] border border-black/[0.05]">
           {/* Card Header */}
           <div className="text-center space-y-1.5 mb-4">
-            <div className="mx-auto w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#0071E3] to-[#2161FF] text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-              <svg
-                className="w-5.5 h-5.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                <polyline points="2 17 12 22 22 17" />
-                <polyline points="2 12 12 17 22 12" />
-              </svg>
-            </div>
+            <img src="/logo.png" alt="VEYRA Logo" className="mx-auto h-11 w-auto object-contain" />
 
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F]">

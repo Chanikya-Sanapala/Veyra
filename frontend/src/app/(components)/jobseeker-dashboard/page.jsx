@@ -665,10 +665,7 @@ export default function JobseekerDashboard() {
       {/* MOBILE NAVBAR */}
       <div className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#2161FF] flex items-center justify-center text-white font-extrabold text-sm shadow-xs">
-            V
-          </div>
-          <span className="font-bold text-lg tracking-tight text-[#101828]">VEYRA</span>
+          <img src="/logo.png" alt="VEYRA" className="h-8 w-auto object-contain" />
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowNotifications(v => !v)} className="p-2 text-gray-600 relative">
@@ -728,10 +725,7 @@ export default function JobseekerDashboard() {
         <aside className="hidden lg:flex w-64 flex-col justify-between p-6 sticky top-0 h-screen border-r border-gray-200/50 bg-white/65 backdrop-blur-xl">
           <div className="space-y-8">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2161FF] to-[#3b82f6] flex items-center justify-center text-white font-black text-lg shadow-xs shadow-[#2161FF]/20">
-                V
-              </div>
-              <span className="font-extrabold text-xl tracking-tight text-[#101828]">VEYRA</span>
+              <img src="/logo.png" alt="VEYRA" className="h-9 w-auto object-contain" />
             </div>
 
             <nav className="space-y-1">
