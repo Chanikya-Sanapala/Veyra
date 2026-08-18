@@ -40,16 +40,9 @@ export default function CinematicHero() {
         <div className="flex items-center gap-10">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white sm:text-xl"
+            className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white sm:text-xl group"
           >
-            <div className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center font-black text-xs">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                <polyline points="2 17 12 22 22 17" />
-                <polyline points="2 12 12 17 22 12" />
-              </svg>
-            </div>
-            <span>VEYRA</span>
+            <img src="/logo.png" alt="VEYRA" className="h-8 w-auto object-contain bg-white/90 p-1 rounded-lg group-hover:scale-105 transition-transform" />
           </Link>
 
           {/* Desktop Nav Links */}
