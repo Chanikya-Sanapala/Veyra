@@ -51,11 +51,8 @@ export default function SignupPage() {
     }
 
     try {
-      const baseUrl = (
-        process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
-      )
-        .trim()
-        .replace(/\/$/, "");
+      const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
+      const baseUrl = rawUrl.trim().replace(/\/api\/?$/, "").replace(/\/$/, "");
 
       const res = await fetch(`${baseUrl}/api/auth/register`, {
         method: "POST",
@@ -182,11 +179,8 @@ export default function SignupPage() {
                 setIsLoading(true);
                 try {
                   const { credential } = credentialResponse;
-                  const baseUrl = (
-                    process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
-                  )
-                    .trim()
-                    .replace(/\/$/, "");
+                  const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
+                  const baseUrl = rawUrl.trim().replace(/\/api\/?$/, "").replace(/\/$/, "");
 
                   const res = await fetch(`${baseUrl}/api/auth/google`, {
                     method: "POST",

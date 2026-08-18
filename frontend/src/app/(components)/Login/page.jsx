@@ -28,11 +28,8 @@ export default function LoginPage() {
     }
 
     try {
-      const baseUrl = (
-        process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
-      )
-        .trim()
-        .replace(/\/$/, "");
+      const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
+      const baseUrl = rawUrl.trim().replace(/\/api\/?$/, "").replace(/\/$/, "");
 
       const res = await fetch(`${baseUrl}/api/auth/login`, {
         method: "POST",
@@ -174,11 +171,8 @@ export default function LoginPage() {
                 try {
                   setIsLoading(true);
                   const { credential } = credentialResponse;
-                  const baseUrl = (
-                    process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
-                  )
-                    .trim()
-                    .replace(/\/$/, "");
+                  const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
+                  const baseUrl = rawUrl.trim().replace(/\/api\/?$/, "").replace(/\/$/, "");
 
                   const res = await fetch(`${baseUrl}/api/auth/google`, {
                     method: "POST",
