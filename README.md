@@ -201,6 +201,59 @@ python app.py
 
 ---
 
+## 🌐 Deployment on Render
+
+Veyra includes a pre-configured `render.yaml` Blueprint configuration for automated deployment on [Render](https://render.com).
+
+### Option A: 1-Click Render Blueprint Deployment (Recommended)
+
+1. Log into [Render](https://dashboard.render.com/) and click **New +** -> **Blueprint**.
+2. Connect your GitHub repository `https://github.com/Chanikya-Sanapala/Veyra`.
+3. Render will automatically detect `render.yaml` and provision three web services:
+   - **`veyra-backend`** (Node.js API)
+   - **`veyra-frontend`** (Next.js Application)
+   - **`veyra-ai-engine`** (Python FastAPI Service)
+4. Populate the required environment secrets when prompted:
+   - `MONGODB_URI`: MongoDB Atlas connection string (e.g., `mongodb+srv://user:pass@cluster.mongodb.net/veyra`).
+   - `EMAIL_USER` & `EMAIL_PASS`: SMTP email sender credentials.
+   - `OPENAI_API_KEY`: OpenAI API Key for interview evaluation.
+5. Click **Apply** to trigger deployment!
+
+---
+
+### Option B: Manual Web Service Deployment
+
+If deploying services individually on Render:
+
+#### 1. Backend Web Service (`veyra-backend`)
+- **Environment**: Node
+- **Root Directory**: `backend`
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- **Environment Variables**:
+  - `MONGODB_URI`: `<Your MongoDB Atlas Connection String>`
+  - `JWT_SECRET`: `<Random Secret String>`
+  - `EMAIL_USER`: `<Your Gmail address>`
+  - `EMAIL_PASS`: `<Your Gmail App Password>`
+
+#### 2. AI Engine Web Service (`veyra-ai-engine`)
+- **Environment**: Python 3.9+
+- **Root Directory**: `ai`
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `uvicorn api_server:app --host 0.0.0.0 --port $PORT`
+- **Environment Variables**:
+  - `OPENAI_API_KEY`: `<Your OpenAI API Key>`
+
+#### 3. Frontend Web Service (`veyra-frontend`)
+- **Environment**: Node
+- **Root Directory**: `frontend`
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm start`
+- **Environment Variables**:
+  - `NEXT_PUBLIC_API_URL`: `https://veyra-backend.onrender.com/api` *(replace with your deployed backend Render URL)*
+
+---
+
 ## 📡 API Overview
 
 | Module | Method | Endpoint | Description |
